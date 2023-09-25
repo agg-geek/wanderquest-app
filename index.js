@@ -1,8 +1,3 @@
-if (process.env.NODE_ENV !== "production") {
-    require('dotenv').config();
-}
-
-
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -14,24 +9,37 @@ const methodOverride = require('method-override');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const User = require('./models/user');
-
+const dotenv = require('dotenv');
+dotenv.config();
 
 const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
 
-mongoose.connect('mongodb://localhost:27017/yelp-camp', {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false
-});
 
-const db = mongoose.connection;
-db.on("error", console.error.bind(console, "connection error:"));
-db.once("open", () => {
-    console.log("Database connected");
-});
+// mongoose.connect(process.env.MONGO_URL, {
+//     useNewUrlParser: true,
+//     useCreateIndex: true,
+//     useUnifiedTopology: true,
+//     useFindAndModify: false
+// });
+
+// const db = mongoose.connection;
+// db.on("error", console.error.bind(console, "connection error:"));
+// db.once("open", () => {
+//     console.log("Database connected");
+// });
+
+mongoose.set("strictQuery", true); // as per warning
+
+mongoose
+	.connect(process.env.MONGO_URL, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		// useCreateIndex: true,
+	})
+	.then(() => console.log("MongoDB connection successful"))
+	.catch((err) => { console.error(err); });
 
 const app = express();
 
@@ -65,10 +73,12 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 app.use((req, res, next) => {
-    console.log(req.session)
+    // console.log(req.session)
     res.locals.currentUser = req.user;
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
+    // the following next is very imp otherwise 
+    // you won't access the code below
     next();
 })
 
